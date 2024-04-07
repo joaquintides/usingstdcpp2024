@@ -1,3 +1,6 @@
 [submodule "frozen"]
 	path = frozen
 	url = https://github.com/serge-sans-paille/frozen.git
+[submodule "mph"]
+	path = mph
+	url = https://github.com/joaquintides/mph.git
