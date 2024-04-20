@@ -1,7 +1,7 @@
 /* PoC of an HD(C)-based perfect set.
  * https://cmph.sourceforge.net/papers/esa09.pdf
  *
- * Copyright 2023 Joaquin M Lopez Munoz.
+ * Copyright 2023-2024 Joaquin M Lopez Munoz.
  * Distributed under the Boost Software License, Version 1.0.
  * (See accompanying file LICENSE_1_0.txt or copy at
  * http://www.boost.org/LICENSE_1_0.txt)
@@ -25,10 +25,6 @@
 #include <type_traits>
 #include <vector>
 #include "mulxp_hash.hpp"
-
-#ifdef HD_PERFECT_SET_TRACE
-#include <iostream>
-#endif
 
 namespace hd{
 
@@ -199,20 +195,11 @@ private:
     boost::dynamic_bitset<>  mask;
     mask.resize(size_,true); /* true --> available */
     std::vector<std::size_t> bucket_positions;
-#ifdef HD_PERFECT_SET_TRACE
-    std::size_t num_inserted=0;
-#endif
 
-#if 1
     std::size_t i=0;
     for(;i<buckets.size();++i){
       const auto& bucket=buckets[sorted_bucket_indices[i]];
       if(bucket.size<=1)break; /* on to buckets of size 1 */
-
-#ifdef HD_PERFECT_SET_TRACE
-      if(i%10000==0)std::cout<<i<<":\t"<<bucket.size<<"\t"<<num_inserted<<"\n";
-      num_inserted+=bucket.size;
-#endif
 
       for(std::size_t d0=0;d0<extended_size;++d0){
         for(std::size_t d1=0;d1<extended_size;++d1){
@@ -244,52 +231,6 @@ private:
       return false;
     next_bucket:;
     }
-#else
-    std::vector<std::size_t> bucket_muls;
-    std::size_t i=0;
-    for(;i<buckets.size();++i){
-      const auto& bucket=buckets[sorted_bucket_indices[i]];
-      if(bucket.size<=1)break; /* on to buckets of size 1 */
-
-#ifdef HD_PERFECT_SET_TRACE
-      if(i%10000==0)std::cout<<i<<":\t"<<bucket.size<<"\t"<<num_inserted<<"\n";
-      num_inserted+=bucket.size;
-#endif
-
-      for(std::size_t d1=0;d1<extended_size;++d1){
-        displacement_info d={0,(d1<<32)+1};
-        bucket_muls.clear();
-        for(auto pnode=bucket.begin;pnode;pnode=pnode->next){
-          bucket_muls.push_back(pnode->hash*d.second);
-        }
-
-        for(auto d0=mask.find_first();d0<size_;d0=mask.find_next(d0)){
-          d.first=(d0-bucket_muls[0])<<size_index;
-          bucket_positions.clear();
-          for(auto mul:bucket_muls){
-            auto pos=element_size_policy::position(d.first+mul,size_index);
-            if(pos>=size_||!mask[pos]||
-               std::find(
-                 bucket_positions.begin(),
-                 bucket_positions.end(),pos)!=bucket_positions.end()){
-              goto next_displacement;
-            }
-            bucket_positions.push_back(pos);
-          }
-          displacements[sorted_bucket_indices[i]]=d;
-          for(auto pnode=bucket.begin;pnode;pnode=pnode->next){
-            auto pos=element_position(pnode->hash,d);
-            elements[pos]=*(pnode->it);
-            mask[pos]=false;
-          }
-          goto next_bucket;
-          next_displacement:;
-        }
-      }
-      return false;
-    next_bucket:;
-    }
-#endif
 
     /* buckets of size <=1 */
 
@@ -298,10 +239,6 @@ private:
       const auto& bucket=buckets[sorted_bucket_indices[i]];
       if(!bucket.size)break; /* remaining buckets also empty */
 
-#ifdef HD_PERFECT_SET_TRACE
-      if(i%10000==0)std::cout<<i<<":\t"<<bucket.size<<"\t"<<num_inserted<<"\n";
-      num_inserted+=bucket.size;
-#endif
       /* this calculation critically depends on displacement_size_policy */
       displacements[sorted_bucket_indices[i]]={pos<<size_index,0};
       elements[pos]=*(bucket.begin->it);

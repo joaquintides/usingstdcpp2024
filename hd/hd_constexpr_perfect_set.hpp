@@ -1,7 +1,7 @@
 /* PoC of an HD(C)-based perfect set.
  * https://cmph.sourceforge.net/papers/esa09.pdf
  *
- * Copyright 2023 Joaquin M Lopez Munoz.
+ * Copyright 2023-2024 Joaquin M Lopez Munoz.
  * Distributed under the Boost Software License, Version 1.0.
  * (See accompanying file LICENSE_1_0.txt or copy at
  * http://www.boost.org/LICENSE_1_0.txt)
@@ -179,21 +179,6 @@ private:
       throw 1;
       return false;
     }
-
-#if 0
-    /* buckets of size <=1 */
-
-    auto pos=mask.find_first();
-    for(;i<buckets.size();++i){
-      const auto& bucket=buckets[sorted_bucket_indices[i]];
-      if(!bucket.size)break; /* remaining buckets also empty */
-      /* this calculation critically depends on displacement_size_policy */
-      displacements[sorted_bucket_indices[i]]={pos<<size_index,0};
-      elements[pos]=*(bucket.begin->it);
-      mask[pos]=false;
-      pos=mask.find_next(pos);
-    }
-#endif
 
     for(;i<buckets.size();++i){
       /* send all empty buckets off range */
